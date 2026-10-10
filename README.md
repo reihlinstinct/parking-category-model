@@ -18,7 +18,7 @@ See [docs/PRIVACY.md](docs/PRIVACY.md).
 | `src/parking_category_model/evaluate.py`, `metrics.py` | confusion matrix, per-class precision/recall |
 | `src/parking_category_model/export.py` | Keras to TFLite |
 | `tools/privacy_guard.py` | CI guard against images, weights, plates, GPS, addresses, secrets |
-| `docs/` | model card, privacy rules |
+| `docs/` | model card, privacy rules, [roadmap](docs/ROADMAP.md) |
 
 ## Use
 
