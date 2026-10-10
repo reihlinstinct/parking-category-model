@@ -1,3 +1,4 @@
+# Public CI: tests on Python 3.10-3.13 plus the privacy guard (free minutes on public repos).
 name: CI
 on:
   push:
