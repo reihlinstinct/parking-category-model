@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "classes": [
+    {
+      "id": "sidewalk",
+      "code_106": 1145,
+      "code_status": "verified",
+      "name_he": "חניה על מדרכה",
+      "text_template_he": "רכב חונה על המדרכה ב{street} ליד מספר {house_number}, בתאריך {time}. המדרכה חסומה להולכי רגל. מספר רכב: {plate}."
+    },
+    {
+      "id": "red_white_curb",
+      "code_106": 1144,
+      "code_status": "verified",
+      "name_he": "חניה בשפה אדומה-לבנה",
+      "text_template_he": "רכב חונה בשפת מדרכה צבועה אדום-לבן ב{street} ליד מספר {house_number}, בתאריך {time}. מספר רכב: {plate}."
+    },
+    {
+      "id": "crosswalk",
+      "code_106": 1145,
+      "code_status": "fallback",
+      "name_he": "חניה על מעבר חצייה",
+      "text_template_he": "רכב חונה על מעבר חצייה ב{street} ליד מספר {house_number}, בתאריך {time}. הרכב חוסם את המעבר להולכי רגל. מספר רכב: {plate}."
+    },
+    {
+      "id": "blocked_ramp",
+      "code_106": null,
+      "code_status": "unverified",
+      "name_he": "חסימת ירידה למדרכה",
+      "text_template_he": "רכב חונה וחוסם את הירידה למדרכה ב{street} ליד מספר {house_number}, בתאריך {time}. מספר רכב: {plate}."
+    },
+    {
+      "id": "other",
+      "code_106": null,
+      "code_status": "unverified",
+      "name_he": "אחר",
+      "text_template_he": "מפגע חניה ב{street} ליד מספר {house_number}, בתאריך {time}. מספר רכב: {plate}."
+    }
+  ]
+}
