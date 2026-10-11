@@ -58,3 +58,15 @@ def test_municipal_url(tmp_path):
 
 def test_real_repo_is_clean():
     assert guard.scan(Path(__file__).resolve().parents[1]) == []
+
+
+def test_public_commit_and_signing_fingerprints_are_not_plates(tmp_path):
+    (tmp_path / "workflow.yml").write_text("uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1\nfpr=D9AD033086DA866791E1616FFFEAA024C5F45CBA\n")
+    assert guard.scan(tmp_path) == []
+
+
+def test_fingerprint_exception_keeps_private_data_checks(tmp_path):
+    (tmp_path / "workflow.yml").write_text("fpr=D9AD033086DA866791E1616FFFEAA024C5F45CBA\nplate=12345678\nmail=person@example.com\n")
+    findings = guard.scan(tmp_path)
+    assert any("licence plate" in x for x in findings)
+    assert any("email address" in x for x in findings)
