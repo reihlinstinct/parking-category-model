@@ -1,0 +1,62 @@
+name: Manual dedicated GPG signing test
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: manual-dedicated-gpg-signing
+  cancel-in-progress: false
+jobs:
+  signing-test:
+    if: ${{ github.repository == 'reihlinstinct/parking-category-model' && github.ref == 'refs/heads/main' && github.actor == github.repository_owner }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+      - name: Create one isolated signed test commit
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.INSTINCT_GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.INSTINCT_GPG_PASSPHRASE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          export GNUPGHOME="$RUNNER_TEMP/dedicated-gpg"
+          mkdir -p "$GNUPGHOME"
+          test -n "$GPG_PRIVATE_KEY"
+          test -n "$GPG_PASSPHRASE"
+          printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import >/dev/null 2>&1
+          printf '%s' "$GPG_PASSPHRASE" > "$GNUPGHOME/passphrase"
+          unset GPG_PRIVATE_KEY GPG_PASSPHRASE
+          fpr=D9AD033086DA866791E1616FFFEAA024C5F45CBA
+          actual=$(gpg --batch --with-colons --list-secret-keys | awk -F: '$1=="fpr" {print $10;exit}')
+          test "$actual" = "$fpr"
+          cat > "$GNUPGHOME/sign" <<'SIGN'
+          #!/bin/sh
+          exec gpg --batch --pinentry-mode loopback --passphrase-file "$GNUPGHOME/passphrase" "$@"
+          SIGN
+          chmod 700 "$GNUPGHOME/sign"
+          git config user.name 'Instinct GitHub Signing'
+          email=$(gpg --batch --with-colons --list-secret-keys | awk -F: '$1=="uid" {print $10;exit}' | sed -n 's/.*<\([^>]*\)>.*/\1/p')
+          test -n "$email"
+          git config user.email "$email"
+          git config user.signingkey "$fpr"
+          git config commit.gpgsign true
+          git config gpg.program "$GNUPGHOME/sign"
+          branch="gpg-signing-test/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git checkout --orphan "$branch"
+          git rm -rf --ignore-unmatch . >/dev/null
+          git commit --allow-empty -m 'Verify dedicated GPG signing [skip ci]'
+          git verify-commit HEAD
+          test -z "$(git ls-tree --name-only HEAD)"
+          git push origin "HEAD:refs/heads/$branch"
+          printf 'Signed empty test commit: %s\nBranch: %s\n' "$(git rev-parse HEAD)" "$branch" >> "$GITHUB_STEP_SUMMARY"
+      - name: Remove signing material
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          export GNUPGHOME="$RUNNER_TEMP/dedicated-gpg"
+          gpgconf --kill gpg-agent || true
+          rm -rf -- "$GNUPGHOME"
