@@ -64,6 +64,9 @@ def scan(root: Path) -> list[str]:
         if rel in CONTENT_ALLOWLIST:
             continue
         text = data.decode("utf-8", errors="replace")
+        # Public 40-hex commit/key fingerprints are not vehicle plates.
+        # Mask only whole SHA/fingerprint literals, preserving line positions.
+        text = re.sub(r"(?<![A-Za-z0-9])[A-Fa-f0-9]{40}(?![A-Za-z0-9])", lambda m: "x" * len(m.group()), text)
         for label, pattern in CONTENT_RULES.items():
             for match in pattern.finditer(text):
                 line = text.count("\n", 0, match.start()) + 1
