@@ -39,7 +39,9 @@ jobs:
           SIGN
           chmod 700 "$GNUPGHOME/sign"
           git config user.name 'Instinct GitHub Signing'
-          git config user.email 'reihlinstinct@gmail.com'
+          email=$(gpg --batch --with-colons --list-secret-keys | awk -F: '$1=="uid" {print $10;exit}' | sed -n 's/.*<\([^>]*\)>.*/\1/p')
+          test -n "$email"
+          git config user.email "$email"
           git config user.signingkey "$fpr"
           git config commit.gpgsign true
           git config gpg.program "$GNUPGHOME/sign"
