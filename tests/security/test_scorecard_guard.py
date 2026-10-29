@@ -1,3 +1,4 @@
+import subprocess
 import importlib.util
 from pathlib import Path
 import sys
@@ -10,6 +11,22 @@ SHA='a'*40
 class GuardTests(unittest.TestCase):
     def rules(self,text,path='.github/workflows/test.yml'):
         return {x.rule for x in g.scan_text(path,text)}
+    def test_invalid_baseline_cli(self):
+        for content in ['{invalid', '[]', 'null', '{"version":1,"findings":[{}]}']:
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as d:
+                root=Path(d);(root/'.github').mkdir()
+                (root/'.github/scorecard-baseline.json').write_text(content)
+                result=subprocess.run([sys.executable,str(P),'--root',d],capture_output=True,text=True)
+                self.assertEqual(result.returncode,2)
+                self.assertIn('Invalid baseline:',result.stderr)
+                self.assertNotIn('Traceback',result.stderr)
+    def test_unreadable_baseline_cli(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);(root/'.github/scorecard-baseline.json').mkdir(parents=True)
+            result=subprocess.run([sys.executable,str(P),'--root',d],capture_output=True,text=True)
+            self.assertEqual(result.returncode,2)
+            self.assertIn('Invalid baseline:',result.stderr)
+            self.assertNotIn('Traceback',result.stderr)
     def test_pip_global_options(self):
         for command in ['python -m pip --disable-pip-version-check install x','pip --no-cache-dir install x']:
             self.assertIn('unhashed-pip-install',self.rules('permissions: {}\nrun: '+command))
