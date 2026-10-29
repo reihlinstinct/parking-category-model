@@ -87,6 +87,22 @@ class GuardTests(unittest.TestCase):
             findings=g.scan(p)
             self.assertIn('first.txt',{f.path for f in findings if f.rule=='unhashed-requirement'})
             self.assertNotIn('second.txt',{f.path for f in findings if f.rule=='unhashed-requirement'})
+    def test_later_install_commands(self):
+        self.assertIn('unhashed-pip-install',self.rules('permissions: {}\nrun: pip install --require-hashes -r req.txt && pip3.13 install x'))
+        self.assertIn('unhashed-pipx-install',self.rules('permissions: {}\nrun: pip install --require-hashes -r req.txt && pipx install x'))
+    def test_requirement_parent_symlink_confined(self):
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as outside:
+            root=Path(d);(root/'.github/workflows').mkdir(parents=True)
+            (root/'.github/workflows/test.yml').write_text('permissions: {}\nrun: pip install --require-hashes -r linked/req.txt\n')
+            (Path(outside)/'req.txt').write_text('x>=1\n')
+            (root/'linked').symlink_to(outside,target_is_directory=True)
+            findings=g.scan(root)
+            self.assertIn('requirements-path',{f.rule for f in findings})
+            self.assertNotIn('unhashed-requirement',{f.rule for f in findings})
+    def test_adversarial_pip_runtime_bound(self):
+        # A subprocess deadline also catches catastrophic backtracking regressions.
+        code='import runpy; g=runpy.run_path('+repr(str(P))+'); line="permissions: {}\\nrun: pip "+"--log --- "*20000; g["scan_text"](".github/workflows/t.yml",line)'
+        subprocess.run([sys.executable,'-c',code],check=True,timeout=3,capture_output=True)
     def test_absolute_venv_pip_requirement_contents(self):
         for pip in ['/tmp/venv/bin/pip', '/tmp/venv/bin/pip3', '/tmp/venv/bin/pip3.13']:
             for command in [pip+' install --require-hashes -r requirements.txt', 'bash -c "'+pip+' install --require-hashes -r requirements.txt"']:
