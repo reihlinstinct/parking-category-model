@@ -38,22 +38,28 @@ def pip_segments(line, depth=0):
             if any(c.isspace() for c in token) and re.search(r'\bpip(?:3)?\b',token):nested.extend(pip_segments(token,depth+1))
     return segments+nested
 
-def requirement_refs(line):
-    refs=[]
+def install_commands(line):
     for segment in pip_segments(line):
         for idx,token in enumerate(segment):
-            if not re.fullmatch(r'pip(?:3(?:\.\d+)?)?',Path(token).name):continue
+            name=Path(token).name
+            if not (re.fullmatch(r'pip(?:3(?:\.\d+)?)?',name) or name=='pipx'):continue
             pos=idx+1
             while pos<len(segment) and segment[pos].startswith('--'):
                 opt=segment[pos];pos+=1
                 if opt in PIP_VALUE_OPTIONS and pos<len(segment):pos+=1
-            if pos>=len(segment) or segment[pos]!='install':continue
-            args=segment[pos+1:]
-            for n,arg in enumerate(args):
-                if arg in ('-r','--requirement') and n+1<len(args):refs.append(args[n+1])
-                elif arg.startswith('--requirement='):refs.append(arg.split('=',1)[1])
-                elif arg.startswith('-r') and arg!='-r':refs.append(arg[2:])
+            if pos<len(segment) and segment[pos]=='install':
+                yield name,segment[pos+1:],segment[idx:]
+
+def refs_from_args(args):
+    refs=[]
+    for n,arg in enumerate(args):
+        if arg in ('-r','--requirement') and n+1<len(args):refs.append(args[n+1])
+        elif arg.startswith('--requirement='):refs.append(arg.split('=',1)[1])
+        elif arg.startswith('-r') and arg!='-r':refs.append(arg[2:])
     return refs
+
+def requirement_refs(line):
+    return [ref for name,args,_ in install_commands(line) if name!='pipx' for ref in refs_from_args(args)]
 
 def duplicate_if_keys(text):
     # Scope-aware check for duplicate job/step if keys, not a full YAML parser.
@@ -137,34 +143,24 @@ def scan_text(path: str, text: str) -> list[Finding]:
             if image.lower() not in stages and image != 'scratch' and not re.search(r'@sha256:[a-fA-F0-9]{64}$', image):
                 add('unpinned-container', 'docker', line)
             if m[2]:stages.add(m[2].lower())
-    # Detect pip invocation on each logical shell line, including pip3/python -m pip.
+    # Tokenized command discovery avoids ambiguous repeated-option regexes.
     logical = re.sub(r'\\\s*\n\s*', ' ', text)
     for line in logical.splitlines():
         if line.lstrip().startswith('#'):continue
-        m = re.search(r'\b(?:pip(?:3)?|python(?:3(?:\.\d+)?)?\s+-m\s+pip)(?:\s+(?:--(?:retries|timeout|proxy|cert|client-cert|cache-dir|log|python|exists-action|keyring-provider|trusted-host)\s+[^\s]+|--[\w-]+(?:=[^\s]+)?))*\s+install\b(.*)', line)
-        if not m:
-            m = re.search(r'\bpipx(?:\s+(?:--(?:retries|timeout|proxy|cert|client-cert|cache-dir|log|python|exists-action|keyring-provider|trusted-host)\s+[^\s]+|--[\w-]+(?:=[^\s]+)?))*\s+install\b(.*)', line)
-            if m:add('unhashed-pipx-install', 'dependencies', m[0].strip())
-            continue
-        args = re.split(r'\s*(?:&&|\|\||;)\s*', m[1], maxsplit=1)[0].strip()
-        # Local installs are safe only when transitive resolution/build isolation are off.
-        offline = ('--no-deps' in args and '--no-build-isolation' in args
-                   and not re.search(r'https?://|git\+', args)
-                   and bool(re.search(r'(?:^|\s)[\"\']?(?:\./|/wheels/)', args)))
-        hashed = '--require-hashes' in args and re.search(r'(?:^|\s)(?:-r\s*|--requirement(?:=|\s))\S+', args)
-        if not (offline or hashed):add('unhashed-pip-install', 'dependencies', re.split(r'\s*(?:&&|\|\||;)\s*', m[0], maxsplit=1)[0].strip())
-        if hashed:
-            try:tokens = shlex.split(args)
-            except ValueError:
-                add('pip-command-shape', 'dependencies', args);continue
-            reqs=[]
-            for idx,t in enumerate(tokens):
-                if t in ('-r','--requirement') and idx+1<len(tokens):reqs.append(tokens[idx+1])
-                elif t.startswith('--requirement='):reqs.append(t.split('=',1)[1])
-                elif t.startswith('-r') and t!='-r':reqs.append(t[2:])
+        for name,args,command in install_commands(line):
+            evidence=shlex.join(command)
+            if name=='pipx':
+                add('unhashed-pipx-install','dependencies',evidence)
+                continue
+            offline=('--no-deps' in args and '--no-build-isolation' in args
+                     and not any('http://' in t or 'https://' in t or 'git+' in t for t in args)
+                     and any(t.startswith(('./','/wheels/')) for t in args))
+            reqs=refs_from_args(args)
+            hashed='--require-hashes' in args and bool(reqs)
+            if not (offline or hashed):add('unhashed-pip-install','dependencies',evidence)
             for req in reqs:
-                if '$' in req or req.startswith('/') or '..' in Path(req).parts:
-                    add('requirements-path', 'dependencies', req)
+                if '$' in req or Path(req).is_absolute() or '..' in Path(req).parts:
+                    add('requirements-path','dependencies',req)
     return list(dict.fromkeys(result))
 
 def scan(root: Path) -> list[Finding]:
@@ -190,8 +186,13 @@ def scan(root: Path) -> list[Finding]:
             reqs.extend(requirement_refs(line))
         for req in reqs:
             if '$' in req or Path(req).is_absolute() or '..' in Path(req).parts:
-                findings.append(Finding(p.relative_to(root).as_posix(),'requirements-path','dependencies',req));continue
+                findings.append(Finding(p.relative_to(root).as_posix(),'requirements-path','dependencies',req))
+                continue
             target=root/req
+            try:target.resolve().relative_to(root.resolve())
+            except (ValueError,OSError):
+                findings.append(Finding(p.relative_to(root).as_posix(),'requirements-path','dependencies',req))
+                continue
             if not target.is_file() or target.is_symlink():
                 findings.append(Finding(p.relative_to(root).as_posix(),'requirements-missing','dependencies',req));continue
             content=re.sub(r'\\\s*\n\s*',' ',target.read_text())
