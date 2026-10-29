@@ -20,8 +20,65 @@ class Finding:
     def fingerprint(self):
         return hashlib.sha256(json.dumps(asdict(self), sort_keys=True).encode()).hexdigest()
 
+# pip global options with separate values accepted by both scan passes.
+PIP_VALUE_OPTIONS={'--retries','--timeout','--proxy','--cert','--client-cert','--cache-dir','--log','--python','--exists-action','--keyring-provider','--trusted-host'}
+def pip_segments(line, depth=0):
+    if depth>4:return []
+    try:
+        lexer=shlex.shlex(line,posix=True,punctuation_chars=';&|')
+        lexer.whitespace_split=True
+        tokens=list(lexer)
+    except ValueError:return []
+    segments=[[]]
+    nested=[]
+    for token in tokens:
+        if token and all(c in ';&|' for c in token):segments.append([])
+        else:
+            segments[-1].append(token)
+            if any(c.isspace() for c in token) and re.search(r'\bpip(?:3)?\b',token):nested.extend(pip_segments(token,depth+1))
+    return segments+nested
+
+def requirement_refs(line):
+    refs=[]
+    for segment in pip_segments(line):
+        for idx,token in enumerate(segment):
+            if not re.fullmatch(r'pip(?:3(?:\.\d+)?)?',Path(token).name):continue
+            pos=idx+1
+            while pos<len(segment) and segment[pos].startswith('--'):
+                opt=segment[pos];pos+=1
+                if opt in PIP_VALUE_OPTIONS and pos<len(segment):pos+=1
+            if pos>=len(segment) or segment[pos]!='install':continue
+            args=segment[pos+1:]
+            for n,arg in enumerate(args):
+                if arg in ('-r','--requirement') and n+1<len(args):refs.append(args[n+1])
+                elif arg.startswith('--requirement='):refs.append(arg.split('=',1)[1])
+                elif arg.startswith('-r') and arg!='-r':refs.append(arg[2:])
+    return refs
+
+def duplicate_if_keys(text):
+    # Scope-aware check for duplicate job/step if keys, not a full YAML parser.
+    scopes={};duplicates=[]
+    for line in text.splitlines():
+        if not line.strip() or line.lstrip().startswith('#'):continue
+        m=re.match(r'^(\s*)(?:-\s+)?([\w-]+):',line)
+        if not m:continue
+        indent=len(m[1]);key=m[2]
+        if line.lstrip().startswith('- '):
+            for level in list(scopes):
+                if level>=indent:del scopes[level]
+        for level in list(scopes):
+            if level>indent:del scopes[level]
+        if key=='if' and key in scopes.get(indent,set()):duplicates.append(line.strip())
+        if line.rstrip().endswith(':') and key!='if':
+            for level in list(scopes):
+                if level>indent:del scopes[level]
+        scopes.setdefault(indent,set()).add(key)
+    return duplicates
+
 def scan_text(path: str, text: str) -> list[Finding]:
     result = []
+    if str(path).endswith(('.yml','.yaml')):
+        result.extend(Finding(path,'duplicate-if-key','workflow',line) for line in duplicate_if_keys(text))
     def add(rule, scope, evidence):
         result.append(Finding(path, rule, scope, evidence.strip()))
     workflow = path.startswith('.github/workflows/') and path.endswith(('.yml', '.yaml'))
@@ -84,9 +141,9 @@ def scan_text(path: str, text: str) -> list[Finding]:
     logical = re.sub(r'\\\s*\n\s*', ' ', text)
     for line in logical.splitlines():
         if line.lstrip().startswith('#'):continue
-        m = re.search(r'\b(?:pip(?:3)?|python(?:3(?:\.\d+)?)?\s+-m\s+pip)(?:\s+--[\w-]+(?:=[^\s]+)?)*\s+install\b(.*)', line)
+        m = re.search(r'\b(?:pip(?:3)?|python(?:3(?:\.\d+)?)?\s+-m\s+pip)(?:\s+(?:--(?:retries|timeout|proxy|cert|client-cert|cache-dir|log|python|exists-action|keyring-provider|trusted-host)\s+[^\s]+|--[\w-]+(?:=[^\s]+)?))*\s+install\b(.*)', line)
         if not m:
-            m = re.search(r'\bpipx(?:\s+--[\w-]+(?:=[^\s]+)?)*\s+install\b(.*)', line)
+            m = re.search(r'\bpipx(?:\s+(?:--(?:retries|timeout|proxy|cert|client-cert|cache-dir|log|python|exists-action|keyring-provider|trusted-host)\s+[^\s]+|--[\w-]+(?:=[^\s]+)?))*\s+install\b(.*)', line)
             if m:add('unhashed-pipx-install', 'dependencies', m[0].strip())
             continue
         args = re.split(r'\s*(?:&&|\|\||;)\s*', m[1], maxsplit=1)[0].strip()
@@ -128,9 +185,12 @@ def scan(root: Path) -> list[Finding]:
         if p.is_symlink():continue
         text=re.sub(r'\\\s*\n\s*',' ',p.read_text(encoding='utf-8'))
         reqs=[]
-        for im in re.finditer(r'\b(?:pip(?:3)?|python(?:3(?:\.\d+)?)?\s+-m\s+pip)(?:\s+--[\w-]+(?:=[^\s]+)?)*\s+install[^\n;&|]*', text):
-            reqs.extend(rm.group(1) for rm in re.finditer(r'(?:^|\s)(?:-r\s*|--requirement(?:=|\s+))([\w./-]+)', im.group(0)))
+        for line in text.splitlines():
+            if line.lstrip().startswith('#'):continue
+            reqs.extend(requirement_refs(line))
         for req in reqs:
+            if '$' in req or Path(req).is_absolute() or '..' in Path(req).parts:
+                findings.append(Finding(p.relative_to(root).as_posix(),'requirements-path','dependencies',req));continue
             target=root/req
             if not target.is_file() or target.is_symlink():
                 findings.append(Finding(p.relative_to(root).as_posix(),'requirements-missing','dependencies',req));continue
