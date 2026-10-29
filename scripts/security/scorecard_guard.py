@@ -160,9 +160,11 @@ def main(argv=None):
     if args.inventory:
         print(json.dumps([asdict(f) for f in findings],indent=2));return bool(findings)
     path=args.root/args.baseline
-    baseline=json.loads(path.read_text()) if path.exists() else {'version':1,'findings':[]}
-    try:new,stale=evaluate(findings,baseline)
-    except (ValueError,KeyError,TypeError) as e:print('Invalid baseline:',e,file=sys.stderr);return 2
+    try:
+        baseline=json.loads(path.read_text()) if path.exists() else {'version':1,'findings':[]}
+        if not isinstance(baseline,dict):raise ValueError('baseline must be an object')
+        new,stale=evaluate(findings,baseline)
+    except (OSError,ValueError,KeyError,TypeError) as e:print('Invalid baseline:',e,file=sys.stderr);return 2
     for f in new:print(f'{f.path}: {f.rule} [{f.scope}]: {f.evidence}')
     for e in stale:print(f'Stale baseline entry: {e["path"]}: {e["rule"]}; remove after fixing')
     print(f'Scorecard guard: {len(findings)} findings, {len(new)} new, {len(stale)} stale baseline entries')
