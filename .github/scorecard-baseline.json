@@ -45,7 +45,7 @@
    "path": ".github/workflows/ci.yml",
    "rule": "unhashed-pip-install",
    "scope": "dependencies",
-   "evidence": "pip install -e \".[dev]\"",
+   "evidence": "pip install -e '.[dev]'",
    "issue": "https://github.com/reihlinstinct/parking-category-model/issues/20",
    "reason": "Pre-existing pip install without --require-hashes; resolves unhashed dependencies; tracked for hash pinning in this issue."
   },
