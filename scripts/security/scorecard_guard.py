@@ -126,7 +126,11 @@ def scan(root: Path) -> list[Finding]:
     # Requirements hash verification, only for static -r files named by guarded inputs.
     for p in sorted(files):
         if p.is_symlink():continue
-        for req in re.findall(r'\bpip(?:3)?\s+install[^\n]*(?:-r\s+|--requirement(?:=|\s+))([\w./-]+)', re.sub(r'\\\s*\n\s*',' ',p.read_text(encoding='utf-8'))):
+        text=re.sub(r'\\\s*\n\s*',' ',p.read_text(encoding='utf-8'))
+        reqs=[]
+        for im in re.finditer(r'\b(?:pip(?:3)?|python(?:3(?:\.\d+)?)?\s+-m\s+pip)(?:\s+--[\w-]+(?:=[^\s]+)?)*\s+install[^\n;&|]*', text):
+            reqs.extend(rm.group(1) for rm in re.finditer(r'(?:^|\s)(?:-r\s*|--requirement(?:=|\s+))([\w./-]+)', im.group(0)))
+        for req in reqs:
             target=root/req
             if not target.is_file() or target.is_symlink():
                 findings.append(Finding(p.relative_to(root).as_posix(),'requirements-missing','dependencies',req));continue
