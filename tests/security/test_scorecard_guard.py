@@ -87,6 +87,50 @@ class GuardTests(unittest.TestCase):
             findings=g.scan(p)
             self.assertIn('first.txt',{f.path for f in findings if f.rule=='unhashed-requirement'})
             self.assertNotIn('second.txt',{f.path for f in findings if f.rule=='unhashed-requirement'})
+    def test_absolute_venv_pip_requirement_contents(self):
+        for pip in ['/tmp/venv/bin/pip', '/tmp/venv/bin/pip3', '/tmp/venv/bin/pip3.13']:
+            for command in [pip+' install --require-hashes -r requirements.txt', 'bash -c "'+pip+' install --require-hashes -r requirements.txt"']:
+                with self.subTest(command=command), tempfile.TemporaryDirectory() as d:
+                    root=Path(d);(root/'.github/workflows').mkdir(parents=True)
+                    (root/'.github/workflows/test.yml').write_text('permissions: {}\nrun: '+command+'\n')
+                    (root/'requirements.txt').write_text('x>=1\n')
+                    self.assertIn('unhashed-requirement',{f.rule for f in g.scan(root)})
+    def test_nested_shell_requirements(self):
+        for shell in ['bash','sh']:
+            for quote in ['"', "'"]:
+                with self.subTest(shell=shell,quote=quote), tempfile.TemporaryDirectory() as d:
+                    root=Path(d);(root/'.github/workflows').mkdir(parents=True)
+                    (root/'.github/workflows/test.yml').write_text('permissions: {}\nrun: '+shell+' -c '+quote+'pip install --require-hashes -r reqs.txt'+quote+'\n')
+                    (root/'reqs.txt').write_text('x>=1\n')
+                    self.assertIn('unhashed-requirement',{f.rule for f in g.scan(root)})
+    def test_separate_value_global_option(self):
+        self.assertIn('unhashed-pip-install',self.rules('permissions: {}\nrun: pip --retries 5 install x'))
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);(root/'.github/workflows').mkdir(parents=True)
+            (root/'.github/workflows/test.yml').write_text('permissions: {}\nrun: pip --retries 5 install --require-hashes -r reqs.txt\n')
+            (root/'reqs.txt').write_text('x>=1\n')
+            self.assertIn('unhashed-requirement',{f.rule for f in g.scan(root)})
+    def test_duplicate_if(self):
+        self.assertIn('duplicate-if-key',self.rules('permissions: {}\njobs:\n  summary:\n    if: true\n    name: Summary\n    if: always()\n'))
+        self.assertNotIn('duplicate-if-key',self.rules('permissions: {}\njobs:\n  a:\n    if: true\n  b:\n    if: false\n'))
+    def test_separate_step_if_keys(self):
+        self.assertNotIn('duplicate-if-key',self.rules('permissions: {}\njobs:\n  a:\n    steps:\n      - name: One\n        if: true\n      - name: Two\n        if: true\n'))
+    def test_commented_requirement_commands(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);(root/'.github/workflows').mkdir(parents=True)
+            (root/'.github/workflows/test.yml').write_text('permissions: {}\n# pip install --require-hashes -rmissing.txt\nrun: echo ok # pip install --require-hashes -ralso-missing.txt\n')
+            self.assertFalse(g.scan(root))
+    def test_quoted_and_plus_requirement_paths(self):
+        for flag in ['-r "req+ci.txt"', '--requirement="req+ci.txt"', '-rreq+ci.txt', '-r "req ci.txt"']:
+            with self.subTest(flag=flag), tempfile.TemporaryDirectory() as d:
+                root=Path(d);(root/'.github/workflows').mkdir(parents=True)
+                (root/'.github/workflows/test.yml').write_text('permissions: {}\nrun: pip install --require-hashes '+flag+'\n')
+                filename='req ci.txt' if 'req ci' in flag else 'req+ci.txt'
+                self.assertIn('requirements-missing',{f.rule for f in g.scan(root)})
+                (root/filename).write_text('x>=1\n')
+                self.assertIn(filename,{f.path for f in g.scan(root) if f.rule=='unhashed-requirement'})
+                (root/filename).write_text('x==1 --hash=sha256:'+'a'*64+'\n')
+                self.assertFalse(g.scan(root))
     def test_requirement_hashes_with_pip_global_options(self):
         for command in ['python -m pip --disable-pip-version-check install', 'pip --no-cache-dir install', 'python3.13 -m pip --no-cache-dir install']:
             with self.subTest(command=command), tempfile.TemporaryDirectory() as d:
