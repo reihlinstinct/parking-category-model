@@ -1,0 +1,61 @@
+{
+ "version": 1,
+ "findings": [
+  {
+   "path": ".github/workflows/scorecard.yml",
+   "rule": "job-write",
+   "scope": "analysis",
+   "evidence": "security-events: write",
+   "issue": "https://github.com/reihlinstinct/parking-category-model/issues/20",
+   "reason": "Approved job-scoped SARIF upload to GitHub code scanning; no code or secrets write."
+  },
+  {
+   "path": ".github/workflows/ci.yml",
+   "rule": "unpinned-action",
+   "scope": "test",
+   "evidence": "actions/checkout@v7",
+   "issue": "https://github.com/reihlinstinct/parking-category-model/issues/20",
+   "reason": "Pre-existing action ref pinned by tag/branch, not commit SHA; tracked for SHA pinning in this issue."
+  },
+  {
+   "path": ".github/workflows/ci.yml",
+   "rule": "unpinned-action",
+   "scope": "test",
+   "evidence": "actions/setup-python@v7",
+   "issue": "https://github.com/reihlinstinct/parking-category-model/issues/20",
+   "reason": "Pre-existing action ref pinned by tag/branch, not commit SHA; tracked for SHA pinning in this issue."
+  },
+  {
+   "path": ".github/workflows/ci.yml",
+   "rule": "unpinned-action",
+   "scope": "privacy-guard",
+   "evidence": "actions/checkout@v7",
+   "issue": "https://github.com/reihlinstinct/parking-category-model/issues/20",
+   "reason": "Pre-existing action ref pinned by tag/branch, not commit SHA; tracked for SHA pinning in this issue."
+  },
+  {
+   "path": ".github/workflows/ci.yml",
+   "rule": "unpinned-action",
+   "scope": "privacy-guard",
+   "evidence": "actions/setup-python@v7",
+   "issue": "https://github.com/reihlinstinct/parking-category-model/issues/20",
+   "reason": "Pre-existing action ref pinned by tag/branch, not commit SHA; tracked for SHA pinning in this issue."
+  },
+  {
+   "path": ".github/workflows/ci.yml",
+   "rule": "unhashed-pip-install",
+   "scope": "dependencies",
+   "evidence": "pip install -e \".[dev]\"",
+   "issue": "https://github.com/reihlinstinct/parking-category-model/issues/20",
+   "reason": "Pre-existing pip install without --require-hashes; resolves unhashed dependencies; tracked for hash pinning in this issue."
+  },
+  {
+   "path": ".github/workflows/manual-gpg-signing.yml",
+   "rule": "top-level-write",
+   "scope": "workflow",
+   "evidence": "contents: write",
+   "issue": "https://github.com/reihlinstinct/parking-category-model/issues/20",
+   "reason": "Pre-existing workflow-level write permission; tracked for job-level scoping in this issue."
+  }
+ ]
+}
