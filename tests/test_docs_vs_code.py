@@ -96,7 +96,11 @@ def test_every_documented_token_exists():
 
 
 def test_doc_flags_catches_fake_flag_in_fence():
-    fence = "```bash\npython -m parking_category_model.train --data-dir d --out m.keras --totally-fake-flag\n```\n"
+    fence = (
+        "```bash\n"
+        "python -m parking_category_model.train --data-dir d --out m.keras --totally-fake-flag\n"
+        "```\n"
+    )
     found = doc_flags(fence)
     assert "--totally-fake-flag" in found
     assert "--data-dir" in found
