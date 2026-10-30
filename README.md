@@ -32,6 +32,8 @@ python -m parking_category_model.evaluate --model model.keras --data-dir /path/o
 python -m parking_category_model.export --model model.keras --out model.tflite
 ```
 
+`train` also accepts `--epochs` (default 10), `--val-split` (default 0.2) and `--seed` (default 0).
+
 The data folder has one sub-folder per class id from `labels.json`. Keep it, and the outputs, out of git.
 
 ## Category codes
