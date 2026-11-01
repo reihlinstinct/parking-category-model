@@ -25,6 +25,7 @@ parking_category_model = ["labels.json"]
 testpaths = ["tests"]
 
 [tool.ruff]
+extend-exclude = ["scripts/security/scorecard_guard.py", "tests/security/test_scorecard_guard.py"]
 line-length = 110
 target-version = "py310"
 
