@@ -20,6 +20,17 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: ruff check .
       - run: pytest
+  py315:
+    # Informational Python 3.15 leg (#27): continue-on-error, never a gate.
+    continue-on-error: true
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.15"
+      - run: pip install -e ".[dev]"
+      - run: pytest
   privacy-guard:
     runs-on: ubuntu-24.04
     steps:

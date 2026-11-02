@@ -56,6 +56,22 @@
    "evidence": "contents: write",
    "issue": "https://github.com/reihlinstinct/parking-category-model/issues/20",
    "reason": "Pre-existing workflow-level write permission; tracked for job-level scoping in this issue."
+  },
+  {
+   "path": ".github/workflows/ci.yml",
+   "rule": "unpinned-action",
+   "scope": "py315",
+   "evidence": "actions/checkout@v7",
+   "issue": "https://github.com/reihlinstinct/parking-category-model/issues/20",
+   "reason": "Matches the existing unpinned convention in this workflow; tracked for SHA pinning in this issue."
+  },
+  {
+   "path": ".github/workflows/ci.yml",
+   "rule": "unpinned-action",
+   "scope": "py315",
+   "evidence": "actions/setup-python@v7",
+   "issue": "https://github.com/reihlinstinct/parking-category-model/issues/20",
+   "reason": "Matches the existing unpinned convention in this workflow; tracked for SHA pinning in this issue."
   }
  ]
 }
