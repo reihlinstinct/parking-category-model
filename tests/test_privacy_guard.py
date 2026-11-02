@@ -48,6 +48,34 @@ def test_hebrew_street(tmp_path):
     assert scan_with(tmp_path, "a.md", "\u05e8\u05d7\u05d5\u05d1 \u05d0\u05dc\u05d5\u05e0\u05d9")
 
 
+# Tokens are assembled, never literal, so this test file stays clean of
+# the patterns it exercises (the file is content-allowlisted anyway).
+CLASSIC_INSTALLATION_TOKEN = "ghs" + "_" + "A" * 36
+STATELESS_INSTALLATION_TOKEN = (
+    "ghs" + "_12345_" + "A" * 100 + "." + "B" * 300 + "." + "C" * 108
+)
+LONG_STATELESS_INSTALLATION_TOKEN = (
+    "ghs" + "_12345_" + "A" * 100 + "." + "B" * 300 + "." + "C" * 200
+)
+
+
+def test_classic_installation_token(tmp_path):
+    findings = scan_with(tmp_path, "a.txt", "token: " + CLASSIC_INSTALLATION_TOKEN)
+    assert any("private key or token" in f for f in findings)
+    assert all(CLASSIC_INSTALLATION_TOKEN not in f for f in findings)
+
+
+def test_stateless_installation_token(tmp_path):
+    findings = scan_with(tmp_path, "a.txt", "token: " + STATELESS_INSTALLATION_TOKEN)
+    assert any("private key or token" in f for f in findings)
+    assert all(STATELESS_INSTALLATION_TOKEN not in f for f in findings)
+
+
+def test_over_520_char_stateless_installation_token(tmp_path):
+    findings = scan_with(tmp_path, "a.txt", "token: " + LONG_STATELESS_INSTALLATION_TOKEN)
+    assert any("private key or token" in f for f in findings)
+
+
 def test_placeholder_street_allowed(tmp_path):
     assert scan_with(tmp_path, "a.md", "\u05e8\u05d7\u05d5\u05d1 {street}") == []
 
