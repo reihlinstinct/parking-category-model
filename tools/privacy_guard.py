@@ -28,7 +28,8 @@ CONTENT_RULES = {
     "municipal or government URL": re.compile(r"https?://[^\s\"')]*\.(muni|gov)\.il", re.IGNORECASE),
     "street address (Hebrew street word + literal name)": re.compile(r"(?:רחוב|רח')\s+[^\s{]"),
     "private key or token": re.compile(
-        r"BEGIN [A-Z ]*PRIVATE KEY|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}"
+        r"BEGIN [A-Z ]*PRIVATE KEY|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}"
+        r"|ghs_[A-Za-z0-9_-]{20,}(?:\.[A-Za-z0-9_-]+)*|AKIA[0-9A-Z]{16}"
     ),
 }
 
