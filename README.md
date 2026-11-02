@@ -44,8 +44,8 @@ page under `man/man1/`, generated from the single source of truth
 `python tools/build_man_pages.py`; `tests/test_cli_docs.py` fails on drift):
 
 ```bash
-python tools/install_man_pages.sh          # to /usr/local/share/man/man1
-python tools/install_man_pages.sh "$HOME/.local"   # per-user install
+tools/install_man_pages.sh                 # to /usr/local/share/man/man1
+tools/install_man_pages.sh "$HOME/.local"  # per-user install
 man parking-category-model-train
 ```
 

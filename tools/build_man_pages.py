@@ -85,10 +85,17 @@ def render(command: cli_spec.Command) -> str:
             lines.append(".RS")
             lines.append(text_line(note))
             lines.append(".RE")
+    lines.append(".SH EXIT STATUS")
+    lines.append(".TP\n.B 0")
+    lines.append("Success.")
+    lines.append(".TP\n.B 2")
+    lines.append("Command-line usage error (invalid or missing arguments).")
     lines.append(".SH SEE ALSO")
     others = [c for c in cli_spec.COMMANDS if c != command.name]
-    refs = ", ".join(f".BR {cli_spec.PROGRAM}-{c} (1)," for c in others)
-    lines.append(f"{refs}\n.BR man (1)" if refs else ".BR man (1)")
+    for i, c in enumerate(others):
+        comma = "," if i < len(others) - 1 else ""
+        lines.append(f".BR {esc(cli_spec.PROGRAM + '-' + c)} (1){comma}")
+    lines.append(".BR man (1)")
     return "\n".join(lines) + "\n"
 
 
@@ -130,12 +137,18 @@ def main(argv: list[str] | None = None) -> int:
     print(f"wrote {len(pages)} man page(s) to {target}")
 
     if args.tarball is not None:
-        with tarfile.open(args.tarball, "w:gz") as tar:
+        # Deterministic: uncompressed tar built in memory, then gzipped with a
+        # zeroed mtime so identical pages give an identical archive.
+        raw = io.BytesIO()
+        with tarfile.open(fileobj=raw, mode="w") as tar:
             for name, body in sorted(pages.items()):
                 data = body.encode("utf-8")
                 info = tarfile.TarInfo(f"man1/{name}")
                 info.size = len(data)
-                tar.addfile(info, io.BytesIO(gzip.compress(b"") and data))
+                info.mtime = 0
+                tar.addfile(info, io.BytesIO(data))
+        with gzip.GzipFile(filename="", mode="wb", fileobj=args.tarball.open("wb"), mtime=0) as gz:
+            gz.write(raw.getvalue())
         print(f"wrote tarball {args.tarball}")
     return 0
 
