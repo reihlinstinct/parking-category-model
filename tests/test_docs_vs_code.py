@@ -34,8 +34,31 @@ def _allowlist() -> dict[str, str]:
     return out
 
 
+def spec_flags() -> dict[str, set[str]]:
+    """{command name: flags} from cli_spec.py, parsed as text (issue #26)."""
+    spec = PKG / "cli_spec.py"
+    out: dict[str, set[str]] = {}
+    if not spec.is_file():
+        return out
+    text = spec.read_text(encoding="utf-8")
+    # Module-level shared Opt constants, e.g. _DATA_DIR = Opt("--data-dir", ...).
+    consts = dict(re.findall(r'^(_[A-Z_]+)\s*=\s*Opt\(\s*["\'](--[a-z-]+)["\']',
+                             text, flags=re.M))
+    blocks = re.split(r"\bCommand\(", text)
+    for block in blocks[1:]:
+        m = re.match(r'\s*"([a-z_]+)"', block)
+        if m:
+            flags = set(re.findall(r'Opt\(\s*["\'](--[a-z-]+)["\']', block))
+            for ref in re.findall(r"^\s*(_[A-Z_]+),\s*$", block, flags=re.M):
+                if ref in consts:
+                    flags.add(consts[ref])
+            out[m.group(1)] = flags
+    return out
+
+
 def cli_modules() -> dict[str, set[str]]:
     """{module: flags} for every package module that builds an ArgumentParser."""
+    spec = spec_flags()
     out: dict[str, set[str]] = {}
     for path in sorted(PKG.glob("*.py")):
         text = path.read_text(encoding="utf-8")
@@ -43,6 +66,10 @@ def cli_modules() -> dict[str, set[str]]:
             continue
         flags = set(re.findall(r'add_argument\(\s*["\'](--[a-z-]+)["\']', text))
         flags.discard("--help")
+        if "cli_spec" in text:
+            # Spec-fed parser (issue #26): the module's flags come from
+            # cli_spec.py, the single source of truth for its command.
+            flags |= spec.get(path.stem, set())
         out[path.stem] = flags
     return out
 

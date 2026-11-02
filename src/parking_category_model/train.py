@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from . import labels, preprocessing
+from . import cli_spec, labels, preprocessing
 
 
 def build_model(n_classes: int, size: int = preprocessing.IMAGE_SIZE):
@@ -49,14 +49,29 @@ def load_dataset(data_dir: Path, class_ids: list[str]):
     return np.stack(xs), np.asarray(ys)
 
 
+def build_parser() -> argparse.ArgumentParser:
+    spec = cli_spec.COMMANDS["train"]
+    parser = argparse.ArgumentParser(description=f"{spec.summary}. {spec.description[0]}")
+    for opt in spec.options:
+        kwargs: dict = {"help": opt.help, "required": opt.required}
+        if opt.flag == "--data-dir" or opt.flag == "--out":
+            kwargs["type"] = Path
+        elif opt.flag in ("--epochs", "--seed"):
+            kwargs["type"] = int
+        elif opt.flag == "--val-split":
+            kwargs["type"] = float
+        else:  # pragma: no cover - defensive
+            raise ValueError(f"unmapped option type: {opt.flag}")
+        defaults = {"--epochs": 10, "--val-split": 0.2, "--seed": 0}
+        if opt.flag in defaults:
+            kwargs["default"] = defaults[opt.flag]
+        parser.add_argument(opt.flag, dest=opt.flag.lstrip("-").replace("-", "_"),
+                            metavar=opt.metavar, **kwargs)
+    return parser
+
+
 def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, required=True, help="private folder, outside git")
-    parser.add_argument("--out", type=Path, required=True, help="where to write the .keras file")
-    parser.add_argument("--epochs", type=int, default=10)
-    parser.add_argument("--val-split", type=float, default=0.2)
-    parser.add_argument("--seed", type=int, default=0)
-    args = parser.parse_args(argv)
+    args = build_parser().parse_args(argv)
 
     import numpy as np
 

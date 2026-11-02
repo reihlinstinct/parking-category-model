@@ -5,12 +5,21 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from . import cli_spec
+
+
+def build_parser() -> argparse.ArgumentParser:
+    spec = cli_spec.COMMANDS["export"]
+    parser = argparse.ArgumentParser(description=f"{spec.summary}. {spec.description[0]}")
+    for opt in spec.options:
+        parser.add_argument(opt.flag, dest=opt.flag.lstrip("-").replace("-", "_"),
+                            metavar=opt.metavar, type=Path, required=opt.required,
+                            help=opt.help)
+    return parser
+
 
 def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", type=Path, required=True)
-    parser.add_argument("--out", type=Path, required=True)
-    args = parser.parse_args(argv)
+    args = build_parser().parse_args(argv)
 
     import tensorflow as tf
 
