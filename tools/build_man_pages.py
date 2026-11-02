@@ -88,6 +88,9 @@ def render(command: cli_spec.Command) -> str:
     lines.append(".SH EXIT STATUS")
     lines.append(".TP\n.B 0")
     lines.append("Success.")
+    lines.append(".TP\n.B 1")
+    lines.append("The command failed (e.g. missing data, unreadable model); "
+                 "Python reports the error and exits 1.")
     lines.append(".TP\n.B 2")
     lines.append("Command-line usage error (invalid or missing arguments).")
     lines.append(".SH SEE ALSO")
