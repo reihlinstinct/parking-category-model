@@ -8,7 +8,13 @@ version = "0.1.0"
 description = "Training, evaluation and TFLite export code for a photo-to-106-category classifier. Code only: no data, no weights."
 readme = "README.md"
 license = { text = "MIT" }
-requires-python = ">=3.10"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
 dependencies = ["numpy>=1.24", "pillow>=10.0"]
 
 [project.optional-dependencies]
@@ -27,7 +33,7 @@ testpaths = ["tests"]
 [tool.ruff]
 extend-exclude = ["scripts/security/scorecard_guard.py", "tests/security/test_scorecard_guard.py"]
 line-length = 110
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
