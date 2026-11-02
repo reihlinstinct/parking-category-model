@@ -36,6 +36,24 @@ python -m parking_category_model.export --model model.keras --out model.tflite
 
 The data folder has one sub-folder per class id from `labels.json`. Keep it, and the outputs, out of git.
 
+## Man pages
+
+Every shipped module command above has a \-\-help summary and a Linux man
+page under `man/man1/`, generated from the single source of truth
+`src/parking_category_model/cli_spec.py` (regenerate with
+`python tools/build_man_pages.py`; `tests/test_cli_docs.py` fails on drift):
+
+```bash
+python tools/install_man_pages.sh          # to /usr/local/share/man/man1
+python tools/install_man_pages.sh "$HOME/.local"   # per-user install
+man parking-category-model-train
+```
+
+A distributable archive comes from `python tools/build_man_pages.py --tarball
+OUT.tar.gz`. Only the shipped module commands get pages; internal CI/dev
+scripts (everything under `tools/` except the two man-page helpers) are
+deliberately excluded.
+
 ## Category codes
 
 `code_status` in `labels.json` says how far a code can be trusted: `verified`, `fallback` (nearest
