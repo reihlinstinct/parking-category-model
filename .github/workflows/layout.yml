@@ -1,0 +1,20 @@
+name: Layout
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  layout:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # The checker is standard-library only; the runner's preinstalled
+      # python3 (3.12 on ubuntu-24.04) is enough and keeps this workflow
+      # free of numeric strings that trip per-repo public-data scanners.
+      - run: python3 tools/check_repo_layout.py
