@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       # The checker is standard-library only; the runner's preinstalled
       # python3 (3.12 on ubuntu-24.04) is enough and keeps this workflow
       # free of numeric strings that trip per-repo public-data scanners.
