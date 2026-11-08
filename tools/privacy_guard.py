@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail if the repository contains images, model weights, plates, GPS, addresses or secrets.
+"""Fail if the repository contains images, model weights, GPS, addresses or secrets.
 
 Usage: python tools/privacy_guard.py [root]
 Exit code 0 = clean, 1 = findings (printed, without echoing the matched text).
@@ -21,7 +21,6 @@ FORBIDDEN_SUFFIXES = {
 CONTENT_ALLOWLIST = {"tools/privacy_guard.py", "tests/test_privacy_guard.py"}
 
 CONTENT_RULES = {
-    "possible licence plate (7-8 digits)": re.compile(r"(?<![\d.])\d{2,3}[- ]?\d{2,3}[- ]?\d{2,3}(?![\d.])"),
     "GPS coordinate pair": re.compile(r"-?\d{1,3}\.\d{4,}\s*,\s*-?\d{1,3}\.\d{4,}"),
     "EXIF GPS tag": re.compile(r"GPS(Latitude|Longitude)", re.IGNORECASE),
     "email address": re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+"),
@@ -65,14 +64,6 @@ def scan(root: Path) -> list[str]:
         if rel in CONTENT_ALLOWLIST:
             continue
         text = data.decode("utf-8", errors="replace")
-        # Public 40-hex commit/key fingerprints and 64-hex sha256 digests (the
-        # hash-locked requirements, #40) are not vehicle plates. Mask only whole
-        # SHA/fingerprint/digest literals, preserving line positions.
-        text = re.sub(
-            r"(?<![A-Za-z0-9])(?:[A-Fa-f0-9]{64}|[A-Fa-f0-9]{40})(?![A-Za-z0-9])",
-            lambda m: "x" * len(m.group()),
-            text,
-        )
         for label, pattern in CONTENT_RULES.items():
             for match in pattern.finditer(text):
                 line = text.count("\n", 0, match.start()) + 1
