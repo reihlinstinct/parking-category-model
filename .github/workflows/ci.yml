@@ -17,7 +17,8 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
-      - run: pip install -e ".[dev]"
+      - run: pip install --require-hashes -r requirements/build.txt -r requirements/dev.txt
+      - run: pip install --no-deps --no-build-isolation -e ./
       - run: ruff check .
       - run: pytest
   py315:
@@ -29,7 +30,8 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.15"
-      - run: pip install -e ".[dev]"
+      - run: pip install --require-hashes -r requirements/build.txt -r requirements/dev.txt
+      - run: pip install --no-deps --no-build-isolation -e ./
       - run: pytest
   privacy-guard:
     runs-on: ubuntu-24.04
@@ -39,3 +41,4 @@ jobs:
         with:
           python-version: "3.12"
       - run: python tools/privacy_guard.py
+      - run: python scripts/check_install_pins.py

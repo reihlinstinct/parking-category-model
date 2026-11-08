@@ -42,14 +42,6 @@
    "reason": "Pre-existing action ref pinned by tag/branch, not commit SHA; tracked for SHA pinning in this issue."
   },
   {
-   "path": ".github/workflows/ci.yml",
-   "rule": "unhashed-pip-install",
-   "scope": "dependencies",
-   "evidence": "pip install -e '.[dev]'",
-   "issue": "https://github.com/reihlinstinct/parking-category-model/issues/20",
-   "reason": "Pre-existing pip install without --require-hashes; resolves unhashed dependencies; tracked for hash pinning in this issue."
-  },
-  {
    "path": ".github/workflows/manual-gpg-signing.yml",
    "rule": "top-level-write",
    "scope": "workflow",
