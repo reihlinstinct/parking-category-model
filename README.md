@@ -18,19 +18,25 @@ See [docs/PRIVACY.md](docs/PRIVACY.md).
 | `src/parking_category_model/evaluate.py`, `metrics.py` | confusion matrix, per-class precision/recall |
 | `src/parking_category_model/export.py` | Keras to TFLite |
 | `tools/privacy_guard.py` | CI guard against images, weights, plates, GPS, addresses, secrets |
+| `requirements/`, `scripts/check_install_pins.py` | hash-locked installs and their offline guard ([docs/DEPENDENCY-LOCKS.md](docs/DEPENDENCY-LOCKS.md)) |
 | `docs/` | model card, privacy rules, [roadmap](docs/ROADMAP.md) |
 
 ## Use
 
 ```bash
-pip install -e ".[dev]"          # tests and lint, no TensorFlow
-pytest && ruff check . && python tools/privacy_guard.py
+pip install --require-hashes -r requirements/build.txt -r requirements/dev.txt  # tests and lint, no TensorFlow
+pip install --no-deps --no-build-isolation -e ./
+pytest && ruff check . && python tools/privacy_guard.py && python scripts/check_install_pins.py
 
-pip install -e ".[train]"        # training needs TensorFlow
+pip install --no-deps -r requirements/train.txt  # training needs TensorFlow (Python 3.11-3.13 today)
 python -m parking_category_model.train --data-dir /path/outside/repo/data --out model.keras
 python -m parking_category_model.evaluate --model model.keras --data-dir /path/outside/repo/data
 python -m parking_category_model.export --model model.keras --out model.tflite
 ```
+
+Installs read the locks under `requirements/` (exact pins with sha256 hashes; the TensorFlow
+lock is pins only) and the project itself installs with nothing else pulled in; see
+[docs/DEPENDENCY-LOCKS.md](docs/DEPENDENCY-LOCKS.md) for why and how to re-lock.
 
 `train` also accepts `--epochs` (default 10), `--val-split` (default 0.2) and `--seed` (default 0).
 

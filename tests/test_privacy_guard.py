@@ -104,3 +104,24 @@ def test_fingerprint_exception_keeps_private_data_checks(tmp_path):
     findings = guard.scan(tmp_path)
     assert any("licence plate" in x for x in findings)
     assert any("email address" in x for x in findings)
+
+
+# sha256 digests in the hash-locked requirements (#40) are masked like 40-hex
+# SHAs; assembled at runtime so the literals never sit in this file.
+DIGEST = "".join(["ab", "1234567", "cd"]) + "e" * 53
+
+
+def test_sha256_digest_is_not_a_plate(tmp_path):
+    assert len(DIGEST) == 64
+    assert scan_with(tmp_path, "requirements/x.txt", f"x==1.0 \\\n    --hash=sha256:{DIGEST}\n") == []
+
+
+def test_plate_beside_digest_still_flagged(tmp_path):
+    digits = "".join(["12", "345", "67"])
+    assert scan_with(tmp_path, "a.md", f"sha256:{DIGEST} car {digits}")
+
+
+@pytest.mark.parametrize("length", [63, 65])
+def test_partial_hex_run_still_flagged(tmp_path, length):
+    run = (DIGEST * 2)[:length]
+    assert scan_with(tmp_path, "a.md", f"id {run}")
