@@ -12,18 +12,14 @@ jobs:
   scan-pr:
     if: github.event_name != 'schedule'
     permissions:
-      actions: read
       contents: read
       pull-requests: read
-      security-events: write
-    uses: reihlinstinct/dependency-inventory/.github/workflows/scan-reusable.yml@48a94064738218cc35d94f5909f08bf82c43ad8d # v1.0.4
+    uses: reihlinstinct/dependency-inventory/.github/workflows/scan-reusable.yml@8fa468e0fd2728a26d484611a4f21d42e9ad85aa # v1.0.5
   scan-weekly:
     if: github.event_name == 'schedule'
     permissions:
-      actions: read
       contents: write
       pull-requests: read
-      security-events: write
-    uses: reihlinstinct/dependency-inventory/.github/workflows/scan-reusable.yml@48a94064738218cc35d94f5909f08bf82c43ad8d # v1.0.4
+    uses: reihlinstinct/dependency-inventory/.github/workflows/scan-reusable.yml@8fa468e0fd2728a26d484611a4f21d42e9ad85aa # v1.0.5
     with:
       commit-inventory: true
