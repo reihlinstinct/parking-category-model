@@ -30,9 +30,11 @@ def test_binary_with_innocent_name(tmp_path):
     assert scan_with(tmp_path, "notes.txt", b"\xff\xd8\xff\x00\x10JFIF")
 
 
-def test_plate(tmp_path):
+def test_plate_numbers_are_not_flagged(tmp_path):
+    # Plates are public data (owner decision 2026-11-08): the plate rule
+    # was removed from the guard.
     digits = "".join(["12", "345", "67"])
-    assert scan_with(tmp_path, "a.md", f"car {digits}")
+    assert scan_with(tmp_path, "a.md", f"car {digits}") == []
 
 
 def test_gps_pair(tmp_path):
@@ -102,7 +104,6 @@ def test_fingerprint_exception_keeps_private_data_checks(tmp_path):
         "plate=12345678\nmail=person@example.com\n"
     )
     findings = guard.scan(tmp_path)
-    assert any("licence plate" in x for x in findings)
     assert any("email address" in x for x in findings)
 
 
@@ -116,12 +117,12 @@ def test_sha256_digest_is_not_a_plate(tmp_path):
     assert scan_with(tmp_path, "requirements/x.txt", f"x==1.0 \\\n    --hash=sha256:{DIGEST}\n") == []
 
 
-def test_plate_beside_digest_still_flagged(tmp_path):
+def test_plate_beside_digest_not_flagged(tmp_path):
     digits = "".join(["12", "345", "67"])
-    assert scan_with(tmp_path, "a.md", f"sha256:{DIGEST} car {digits}")
+    assert scan_with(tmp_path, "a.md", f"sha256:{DIGEST} car {digits}") == []
 
 
 @pytest.mark.parametrize("length", [63, 65])
-def test_partial_hex_run_still_flagged(tmp_path, length):
+def test_partial_hex_run_not_flagged(tmp_path, length):
     run = (DIGEST * 2)[:length]
-    assert scan_with(tmp_path, "a.md", f"id {run}")
+    assert scan_with(tmp_path, "a.md", f"id {run}") == []
