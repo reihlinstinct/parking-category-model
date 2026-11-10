@@ -1,0 +1,24 @@
+name: Gemini review
+
+# Event-driven Gemini PR review (COMMENT-only, advisory). Calls the pinned
+# reusable workflow in reihlinstinct/gemini-pr-review; see that repo's
+# README for the design rules. Replaces the 15-minute cron proposal in
+# collaboration-docs#51.
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+permissions: {}
+
+jobs:
+  gemini-review:
+    # Same-repo PRs only (never forks), and never pull_request_target,
+    # so the secret and the write token stay off untrusted code.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: reihlinstinct/gemini-pr-review/.github/workflows/review-reusable.yml@fb28413f859e8b6b4c8cd99a505da7e82d7ca5fc # v1
+    secrets:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
