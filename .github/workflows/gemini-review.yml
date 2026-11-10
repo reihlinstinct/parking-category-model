@@ -19,6 +19,6 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    uses: reihlinstinct/gemini-pr-review/.github/workflows/review-reusable.yml@fb28413f859e8b6b4c8cd99a505da7e82d7ca5fc # v1
+    uses: reihlinstinct/gemini-pr-review/.github/workflows/review-reusable.yml@d0e3c66f4724b5fb5a6e6133aae43c8adaedf277 # v1
     secrets:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
