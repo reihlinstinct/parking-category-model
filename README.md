@@ -26,7 +26,7 @@ See [docs/PRIVACY.md](docs/PRIVACY.md).
 ```bash
 pip install --require-hashes -r requirements/build.txt -r requirements/dev.txt  # tests and lint, no TensorFlow
 pip install --no-deps --no-build-isolation -e ./
-pytest && ruff check . && python tools/privacy_guard.py && python scripts/check_install_pins.py
+coverage run -m pytest && coverage report && ruff check . && python tools/privacy_guard.py && python scripts/check_install_pins.py
 
 pip install --no-deps -r requirements/train.txt  # training needs TensorFlow (Python 3.11-3.13 today)
 python -m parking_category_model.train --data-dir /path/outside/repo/data --out model.keras

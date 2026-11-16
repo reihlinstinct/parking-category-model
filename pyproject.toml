@@ -19,7 +19,7 @@ dependencies = ["numpy>=1.24", "pillow>=10.0"]
 
 [project.optional-dependencies]
 train = ["tensorflow>=2.15"]
-dev = ["pytest>=8", "ruff>=0.5"]
+dev = ["pytest>=8", "ruff>=0.5", "coverage>=7"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -37,3 +37,10 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+
+[tool.coverage.run]
+source = ["src"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true

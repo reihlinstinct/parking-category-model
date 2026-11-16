@@ -20,7 +20,8 @@ jobs:
       - run: pip install --require-hashes -r requirements/build.txt -r requirements/dev.txt
       - run: pip install --no-deps --no-build-isolation -e ./
       - run: ruff check .
-      - run: pytest
+      - run: COVERAGE_FILE="$RUNNER_TEMP/coverage-data" coverage run -m pytest
+      - run: COVERAGE_FILE="$RUNNER_TEMP/coverage-data" coverage report
   py315:
     # Informational Python 3.15 leg (#27): continue-on-error, never a gate.
     continue-on-error: true

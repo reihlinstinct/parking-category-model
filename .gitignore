@@ -24,3 +24,4 @@ dist/
 *.npz
 *.npy
 data/
+.coverage*

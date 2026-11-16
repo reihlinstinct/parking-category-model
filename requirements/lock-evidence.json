@@ -13,8 +13,8 @@
     },
     "requirements/dev.txt": {
       "command": "uv pip compile --universal --generate-hashes --python-version 3.11 pyproject.toml --extra dev -c requirements/core.txt -o requirements/dev.txt",
-      "inputs_sha256": "c852f4db9bfb79d0eb9f26ed721610bd9fa8e3b7a376e87938d94b4b8983274a",
-      "lock_sha256": "6e876b655211ed6a981f24effc9ccea607dace4520f39c8c28de6ec90ad61004"
+      "inputs_sha256": "ecad22f03e954b76df020c6865b579142761ccaf4e7bc0ed74227407c8efa58b",
+      "lock_sha256": "0888acd36a9495d0fe678bf97934c40c8191f3a8f6b847e7054f5e73c1f2eb14"
     },
     "requirements/train.txt": {
       "command": "uv pip compile --universal --python-version 3.11 pyproject.toml --extra train -c requirements/core.txt -o requirements/train.txt",
