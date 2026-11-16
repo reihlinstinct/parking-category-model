@@ -6,6 +6,10 @@ on:
   pull_request:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     runs-on: ubuntu-24.04
@@ -16,6 +20,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
+          cache: pip
           python-version: ${{ matrix.python-version }}
       - run: pip install --require-hashes -r requirements/build.txt -r requirements/dev.txt
       - run: pip install --no-deps --no-build-isolation -e ./
@@ -29,6 +34,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
+          cache: pip
           python-version: "3.15"
       - run: pip install --require-hashes -r requirements/build.txt -r requirements/dev.txt
       - run: pip install --no-deps --no-build-isolation -e ./
@@ -39,6 +45,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
+          cache: pip
           python-version: "3.12"
       - run: python tools/privacy_guard.py
       - run: python scripts/check_install_pins.py
