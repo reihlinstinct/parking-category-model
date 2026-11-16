@@ -1,0 +1,26 @@
+name: Vulnerability scan
+
+on:
+  pull_request:
+  schedule:
+    - cron: '52 5 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  scan-pr:
+    if: github.event_name != 'schedule'
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: reihlinstinct/dependency-inventory/.github/workflows/scan-reusable.yml@0976a9cc34d3b34a5f8c65b45953678bba92f0b2 # v1.0.9
+  scan-weekly:
+    if: github.event_name == 'schedule'
+    permissions:
+      contents: read
+    uses: reihlinstinct/dependency-inventory/.github/workflows/scan-reusable.yml@0976a9cc34d3b34a5f8c65b45953678bba92f0b2 # v1.0.9

@@ -1,0 +1,26 @@
+{
+  "comment": "Written by `python scripts/check_install_pins.py --write-evidence` after re-locking (docs/DEPENDENCY-LOCKS.md). The guard fails when a lock or one of its inputs changes without this file.",
+  "locks": {
+    "requirements/build.txt": {
+      "command": "uv pip compile --universal --generate-hashes --python-version 3.11 requirements/build.in -o requirements/build.txt",
+      "inputs_sha256": "037289f0e1267adfdf782ee2bbbd44081e61216bfcf49fd42067732ec345a2da",
+      "lock_sha256": "f82d9cd9a03fa07bcba94e4a35675d2fd3ee5c60f66db7913507a0619d87a5ab"
+    },
+    "requirements/core.txt": {
+      "command": "uv pip compile --universal --generate-hashes --python-version 3.11 pyproject.toml -o requirements/core.txt",
+      "inputs_sha256": "94679d2adbf1dcf7a8955bd0dab5633af8890ee49e43300dc68755ea37dec240",
+      "lock_sha256": "871f4d310e2537898c913c8f75ae40ed335823bf05f58a067fa7df98f7c925dd"
+    },
+    "requirements/dev.txt": {
+      "command": "uv pip compile --universal --generate-hashes --python-version 3.11 pyproject.toml --extra dev -c requirements/core.txt -o requirements/dev.txt",
+      "inputs_sha256": "c852f4db9bfb79d0eb9f26ed721610bd9fa8e3b7a376e87938d94b4b8983274a",
+      "lock_sha256": "6e876b655211ed6a981f24effc9ccea607dace4520f39c8c28de6ec90ad61004"
+    },
+    "requirements/train.txt": {
+      "command": "uv pip compile --universal --python-version 3.11 pyproject.toml --extra train -c requirements/core.txt -o requirements/train.txt",
+      "inputs_sha256": "e04bdbc9ba2bff3384c1947fa5ca7c4cf61ba28580cf0b0752659807419a774d",
+      "lock_sha256": "3326f325412b7aa1688a6c0b1429e2bdb96eef43b2b831ce86f536186a04cc0f"
+    }
+  },
+  "version": 1
+}

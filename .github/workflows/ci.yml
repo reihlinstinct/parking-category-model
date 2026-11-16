@@ -1,0 +1,51 @@
+# Public CI: tests on Python 3.11-3.14 plus the privacy guard (free minutes on public repos).
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          cache: pip
+          python-version: ${{ matrix.python-version }}
+      - run: pip install --require-hashes -r requirements/build.txt -r requirements/dev.txt
+      - run: pip install --no-deps --no-build-isolation -e ./
+      - run: ruff check .
+      - run: pytest
+  py315:
+    # Informational Python 3.15 leg (#27): continue-on-error, never a gate.
+    continue-on-error: true
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          cache: pip
+          python-version: "3.15"
+      - run: pip install --require-hashes -r requirements/build.txt -r requirements/dev.txt
+      - run: pip install --no-deps --no-build-isolation -e ./
+      - run: pytest
+  privacy-guard:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          cache: pip
+          python-version: "3.12"
+      - run: python tools/privacy_guard.py
+      - run: python scripts/check_install_pins.py

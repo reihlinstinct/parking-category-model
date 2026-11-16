@@ -1,0 +1,26 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+# Data and model artifacts never belong in this repo (see docs/PRIVACY.md).
+*.jpg
+*.jpeg
+*.png
+*.heic
+*.webp
+*.gif
+*.bmp
+*.tif
+*.tiff
+*.tflite
+*.keras
+*.h5
+*.onnx
+*.pt
+*.npz
+*.npy
+data/
