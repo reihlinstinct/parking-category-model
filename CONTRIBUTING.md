@@ -30,7 +30,7 @@ Install from the locks under `requirements/`, never by package name, then the pr
 python -m venv .venv && . .venv/bin/activate
 pip install --require-hashes -r requirements/build.txt -r requirements/dev.txt
 pip install --no-deps --no-build-isolation -e ./
-pytest && ruff check . && python scripts/check_install_pins.py
+coverage run -m pytest && coverage report && ruff check . && python scripts/check_install_pins.py
 ```
 
 A dependency change re-locks and re-records the evidence in the same PR: see [docs/DEPENDENCY-LOCKS.md](docs/DEPENDENCY-LOCKS.md). `scripts/check_install_pins.py` flags any unhashed or unpinned install command in the docs and workflows.
