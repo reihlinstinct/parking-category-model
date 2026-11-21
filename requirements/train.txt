@@ -16,7 +16,7 @@ gast==0.7.0
     # via tensorflow
 google-pasta==0.2.0
     # via tensorflow
-grpcio==1.85.1
+grpcio==1.85.3
     # via tensorflow
 h5py==3.14.0
     # via
